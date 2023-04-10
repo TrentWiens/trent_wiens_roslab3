@@ -96,8 +96,6 @@ class WallFollow:
         
         Dt = b * math.cos(alpha)
         
-        print(Dt)
-        
         return 0.0 
 
     def lidar_callback(self, data):
