@@ -10,9 +10,9 @@ from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
 #PID CONTROL PARAMS
-kp = 1#TODO
-kd = 1#TODO
-ki = 1#TODO
+kp = 1
+kd = 0.001
+ki = 1
 servo_offset = 0.0
 prev_error = 0.0 
 error = 0.0
@@ -43,25 +43,25 @@ class WallFollow:
         # Outputs length in meters to object with angle in lidar scan field of view
         #make sure to take care of nans etc.
 
-		ranges = data.ranges
+        ranges = data.ranges
 		
-		rotAngle = angle + 90
+        rotAngle = angle + 90
 		
-		if rotAngle >= 360:
-			rotAngle = rotAngle - 360
-		elif rotAngle < 0:
-			rotAngle = rotAngle + 360
-		
-		angleRatio = rotAngle/360.0
-		rangeIndex = angleRatio * 1080
-		rangeIndex = rangeIndex + 1
-		rangeIndex = int(rangeIndex)
-		outRange = ranges[rangeIndex]
-		
-		if not math.isnan(outRange):
-		    	return outRange
-		else:
-		    	return 0.0
+        if rotAngle >= 360:
+                rotAngle = rotAngle - 360
+        elif rotAngle < 0:
+                rotAngle = rotAngle + 360
+		        
+        angleRatio = rotAngle/360.0
+        rangeIndex = angleRatio * 1080
+        rangeIndex = rangeIndex + 1
+        rangeIndex = int(rangeIndex)
+        outRange = ranges[rangeIndex]
+		        
+        if not math.isnan(outRange):
+                return outRange
+        else:
+                return 0.0
 
     def pid_control(self, error, velocity):
         global integral
@@ -80,17 +80,19 @@ class WallFollow:
         derivative = kd * (error-prev_error) / dt
 		
         U = proportional + derivative
+        
+        Udeg = abs(U * 180/math.pi)
 		
-        if U >= 0 and U < 10:
-            angle = -U 
+        if Udeg >= 0 and Udeg < 10:
+            angle = U 
             velocity = 1.5
-        elif U >= 10 and U < 20:
-            angle = -U
+        elif Udeg >= 10 and Udeg < 20:
+            angle = U
             velocity = 1
         else:
-            angle = -U
+            angle = U
             velocity = .5
-        
+            
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
